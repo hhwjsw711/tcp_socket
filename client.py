@@ -14,18 +14,16 @@ def socket_client():
     except socket.error as msg:
         print(msg)  # 输出错误信息
         sys.exit(1)
-    print("服务器已连接...\n")
+    print("服务器已连接...")
     LEN = 0
     while 1:
         filepath = input("please input the file path:")  # 输入要发送的文件的路径
         if os.path.isfile(filepath):  # 如果文件存在
-            # 定义文件信息，128sq（其中sq是在不同机器上的衡量单位）表示文件命长128byte
-            fileinfo_size = struct.calcsize('128sq')
             # 定义文件名和文件大小
             fhead = struct.pack('128sq', os.path.basename(filepath).encode('utf-8'),
                                 os.stat(filepath).st_size)
             s.send(fhead)  # 发送文件名、文件大小等信息
-            print('即将发送的文件的路径为：{0}\n'.format(filepath))
+            print('即将发送的文件的路径为：{0}'.format(filepath))
             LENS = os.stat(filepath).st_size  # 获取文件的大小
             fp = open(filepath, 'rb')  # 读取文件
             while 1:
@@ -36,7 +34,7 @@ def socket_client():
                     print('{0} 文件发送完毕...'.format(filepath))
                     break
                 s.send(data)  # 发送文件
-                print('已发送：', int(LEN / LENS * 100), '%')
+                # print('已发送：', int(LEN / LENS * 100), '%')
             fp.close()  # 关闭
             # 等待服务端传回的数据
             while True:
@@ -46,7 +44,7 @@ def socket_client():
                 if buf:
                     filename, filesize = struct.unpack('128sq', buf)
                     fn = filename.strip('\00'.encode('utf-8'))
-                    new_filename = os.path.join('test_out/'.encode('utf-8'), 'new_'.encode('utf-8') + fn)
+                    new_filename = os.path.join('./'.encode('utf-8'), 'new_'.encode('utf-8') + fn)
                     print('文件的新名字是{0}，文件的大小为{1}'.format(new_filename, filesize))
 
                     recvd_size = 0
@@ -61,7 +59,7 @@ def socket_client():
                         else:
                             data = s.recv(filesize - recvd_size)  # 最后一次接收
                             recvd_size += len(data)
-                        print('已接收：', int(recvd_size / filesize * 100), '%')
+                        # print('已接收：', int(recvd_size / filesize * 100), '%')
                         fp.write(data)  # 写入文件
                     fp.close()
                     break

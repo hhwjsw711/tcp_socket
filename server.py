@@ -3,7 +3,6 @@ import socket
 import threading
 import os
 import struct
-# from new_demo4 import demo
 
 ip_port = ("192.168.1.11", 8000)  # 定义监听地址和端口
 
@@ -38,7 +37,7 @@ def deal_data(conn, addr):
         if buf:
             filename, filesize = struct.unpack('128sq', buf)
             fn = filename.strip('\00'.encode('utf-8'))
-            new_filename = os.path.join('test_jpg/'.encode('utf-8'), 'new_'.encode('utf-8') + fn)
+            new_filename = os.path.join('./'.encode('utf-8'), 'new_'.encode('utf-8') + fn)
             print('文件的新名字是{0}，文件的大小为{1}'.format(new_filename, filesize))
 
             recvd_size = 0
@@ -53,13 +52,10 @@ def deal_data(conn, addr):
                 else:
                     data = conn.recv(filesize - recvd_size)  # 最后一次接收
                     recvd_size += len(data)
-                print('已接收：', int(recvd_size / filesize * 100), '%')
+                # print('已接收：', int(recvd_size / filesize * 100), '%')
                 fp.write(data)  # 写入文件
             fp.close()
-            # 处理文件
-            # demo('test_jpg', 89, 6912, 640, 6912)  # 89 is erode kernel size
-            print('正在处理文件...')
-            # 发送处理后的文件
+            # 发送文件
             LEN = 0
             while 1:
                 process_filename = str(new_filename, encoding='utf-8')
@@ -70,7 +66,7 @@ def deal_data(conn, addr):
                     fhead = struct.pack('128sq', os.path.basename(process_filename).encode('utf-8'),
                                         os.stat(process_filename).st_size)
                     conn.send(fhead)  # 发送文件名、文件大小等信息
-                    print('即将发送的文件的路径为：{0}\n'.format(process_filename))
+                    print('即将发送的文件的路径为：{0}'.format(process_filename))
                     LENS = os.stat(process_filename).st_size  # 获取文件的大小
                     fp = open(process_filename, 'rb')  # 读取文件
                     while 1:
@@ -81,7 +77,7 @@ def deal_data(conn, addr):
                             print('{0} 文件发送完毕...'.format(process_filename))
                             break
                         conn.send(data)  # 发送文件
-                        print('已发送：', int(LEN / LENS * 100), '%')
+                        # print('已发送：', int(LEN / LENS * 100), '%')
                     fp.close()  # 关闭
                     break
         conn.close()
