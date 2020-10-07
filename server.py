@@ -3,6 +3,8 @@ import socket
 import threading
 import os
 import struct
+import io
+import time
 
 ip_port = ("192.168.1.11", 8000)  # 定义监听地址和端口
 
@@ -84,5 +86,48 @@ def deal_data(conn, addr):
         break
 
 
+def service():
+    try:
+        # 定义socket连接对象
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # 解决端口重用问题
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(ip_port)  # 绑定地址
+        s.listen(1)  # 等待最大客户数
+    except socket.error as msg:
+        print(msg)  # 输出错误信息
+        exit(1)
+    print('监听开始...')
+
+    conn, addr = s.accept()  # 等待连接
+
+    print('接收的图片来自{0}'.format(addr))
+
+    binary_stream = io.BytesIO()
+    while True:
+        image_data = conn.recv(8192)
+        if image_data == bytes('EOF', encoding='utf-8'):
+            print('接收图片成功')
+            break
+        binary_stream.write(image_data)  # 写入内存
+        print('写入成功')
+
+    mutable_value = binary_stream.getvalue()
+    print(type(mutable_value))  # 返回包含整个缓冲区内容的bytes。
+
+    binary_stream.seek(0)
+
+    while True:
+        image_data = binary_stream.read(8192)
+        if not image_data:
+            print('发送图片成功')
+            break
+        conn.send(image_data)
+    binary_stream.close()
+
+    time.sleep(1)
+    conn.sendall(bytes('EOF', encoding='utf-8'))
+
+
 if __name__ == '__main__':
-    socket_service()
+    service()

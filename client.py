@@ -3,6 +3,7 @@ import socket
 import os
 import sys
 import struct
+import time
 
 ip_port = ("192.168.1.11", 8000)  # 指定要发送的服务器地址和端口
 
@@ -67,5 +68,43 @@ def socket_client():
         break
 
 
+def client():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # 生成socket连接对象
+        s.connect(ip_port)  # 连接
+    except socket.error as msg:
+        print(msg)  # 输出错误信息
+        sys.exit(1)
+    print("服务器已连接...")
+    while True:
+        filepath = input("please input the image path:")  # 输入要发送的图片的路径
+        if os.path.isfile(filepath):  # 如果图片存在
+            print('即将发送的文件的路径为：{0}'.format(filepath))
+            fp = open(filepath, 'rb')  # 读取图片
+            while True:
+                data = fp.read(8192)
+                if not data:
+                    print('{0}图片发送完毕...'.format(filepath))
+                    break
+                s.send(data)  # 发送图片
+            fp.close()  # 关闭
+
+            time.sleep(1)
+            s.sendall(bytes('EOF', encoding='utf-8'))
+
+            # 等待服务端传回的图片
+
+            fp = open('./test_1.jpg', 'wb')  # 创建图片
+            while True:
+                image_data = s.recv(8192)
+                if image_data == bytes('EOF', encoding='utf-8'):
+                    print('接收图片成功')
+                    break
+                fp.write(image_data)  # 写入图片
+            fp.close()  # 关闭
+        s.close()
+        break
+
+
 if __name__ == '__main__':
-    socket_client()
+    client()
