@@ -6,7 +6,7 @@ import struct
 import io
 import time
 
-ip_port = ("192.168.1.11", 8000)  # 定义监听地址和端口
+ip_port = ("192.168.1.8", 8000)  # 定义监听地址和端口
 
 
 def socket_service():
@@ -99,34 +99,56 @@ def service():
         exit(1)
     print('监听开始...')
 
-    conn, addr = s.accept()  # 等待连接
+    while 1:
+        conn, addr = s.accept()  # 等待连接
 
-    print('接收的图片来自{0}'.format(addr))
+        print('接收的图片来自{0}'.format(addr))
 
-    binary_stream = io.BytesIO()
-    while True:
-        image_data = conn.recv(8192)
-        if image_data == bytes('EOF', encoding='utf-8'):
-            print('接收图片成功')
+        while True:
+            fileinfo_size = struct.calcsize('!H2B2IBI6f2HB')
+
+            # 接收数据
+            buf = conn.recv(fileinfo_size)
+            if buf:
+                head, id, camera_id, image_h, image_v, pixel_size, focal_length, \
+                camera_x, camera_y, camera_z, camera_a, camera_b, camera_c, \
+                second, millisecond, optic_electronic_hybrid_ban = struct.unpack('!H2B2IBI6f2HB', buf)
+                print('帧头为{0}，标识字为{1}，相机标识为{2}，图像横向像素个数为{3}，图像竖向像素个数为{4}，像元大小为{5}，'
+                      '焦距为{6}，相机X轴为{7}，相机Y轴为{8}，相机Z轴为{9}，相机滚动角为{10}，相机俯仰角为{11}，'
+                      '相机偏航角为{12}，拍照时间秒为{13}，拍照时间毫秒为{14}，'
+                      '电光融合准禁为{15}'.format(head, id, camera_id, image_h, image_v, pixel_size, focal_length,
+                                           camera_x, camera_y, camera_z, camera_a, camera_b, camera_c,
+                                           second, millisecond, optic_electronic_hybrid_ban))
+
+                binary_stream = io.BytesIO()
+                while True:
+                    image_data = conn.recv(8192)
+                    if image_data == bytes('EOF', encoding='utf-8'):
+                        print('接收图片成功')
+                        break
+                    binary_stream.write(image_data)  # 写入内存
+
+                mutable_value = binary_stream.getvalue()
+
+                from new_demo5 import demo
+                img_stream = demo(mutable_value, 89, 6912, 640, 6912)
+
+                binary_stream.close()
+
+                binary_stream = io.BytesIO(img_stream)
+                while True:
+                    image_data = binary_stream.read(8192)
+                    if not image_data:
+                        print('发送图片成功')
+                        break
+                    conn.send(image_data)
+                binary_stream.close()
+
+                time.sleep(1)
+                conn.sendall(bytes('EOF', encoding='utf-8'))
+
+            conn.close()
             break
-        binary_stream.write(image_data)  # 写入内存
-        print('写入成功')
-
-    mutable_value = binary_stream.getvalue()
-    print(type(mutable_value))  # 返回包含整个缓冲区内容的bytes。
-
-    binary_stream.seek(0)
-
-    while True:
-        image_data = binary_stream.read(8192)
-        if not image_data:
-            print('发送图片成功')
-            break
-        conn.send(image_data)
-    binary_stream.close()
-
-    time.sleep(1)
-    conn.sendall(bytes('EOF', encoding='utf-8'))
 
 
 if __name__ == '__main__':

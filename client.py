@@ -5,7 +5,7 @@ import sys
 import struct
 import time
 
-ip_port = ("192.168.1.11", 8000)  # 指定要发送的服务器地址和端口
+ip_port = ("192.168.1.8", 8000)  # 指定要发送的服务器地址和端口
 
 
 def socket_client():
@@ -79,6 +79,11 @@ def client():
     while True:
         filepath = input("please input the image path:")  # 输入要发送的图片的路径
         if os.path.isfile(filepath):  # 如果图片存在
+            # 定义文件名和文件大小
+            fhead = struct.pack('!H2B2IBI6f2HB', 0x6A94, 0x77, 0x3C, 0x000020E8, 0x00001790, 0x08, 0x00000032,
+                                0.92727436, -1.8544941, 0.92727436, -0.525731, 0.000000, 0.850651,
+                                0x0000, 0x000A, 0x00)
+            s.send(fhead)  # 发送文件名、文件大小等信息
             print('即将发送的文件的路径为：{0}'.format(filepath))
             fp = open(filepath, 'rb')  # 读取图片
             while True:
@@ -93,12 +98,14 @@ def client():
             s.sendall(bytes('EOF', encoding='utf-8'))
 
             # 等待服务端传回的图片
+            fn = os.path.basename(filepath).encode('utf-8')
+            new_filename = os.path.join('./'.encode('utf-8'), 'new_'.encode('utf-8') + fn)
 
-            fp = open('./test_1.jpg', 'wb')  # 创建图片
+            fp = open(new_filename, 'wb')  # 创建图片
             while True:
                 image_data = s.recv(8192)
                 if image_data == bytes('EOF', encoding='utf-8'):
-                    print('接收图片成功')
+                    print('{0}接收图片成功...'.format(new_filename))
                     break
                 fp.write(image_data)  # 写入图片
             fp.close()  # 关闭
