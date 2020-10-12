@@ -5,6 +5,15 @@ import os
 import struct
 import io
 import time
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--port', type=int, help='The port on which the server is listening', required=True)
+
+args = parser.parse_args()
+
+host = ''
+port = args.port
 
 ip_port = ("192.168.1.8", 8000)  # 定义监听地址和端口
 
@@ -151,5 +160,25 @@ def service():
             break
 
 
+def udp_service():
+    # 定义socket连接对象
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    # 解决端口重用问题
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    # Bind the socket to the port
+    server_address = (host, port)
+    print('starting up on port {0}'.format(port))
+    sock.bind(server_address)
+
+    while True:
+        data, address = sock.recvfrom(65507)
+        if data == b'exit':
+            sock.sendto(data, address)
+            break
+        print(data.decode(encoding='utf-8'))
+        sock.sendto(data, address)
+    sock.close()
+
+
 if __name__ == '__main__':
-    service()
+    udp_service()

@@ -4,6 +4,16 @@ import os
 import sys
 import struct
 import time
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--host', type=str, help='The IP at the server is listening', required=True)
+parser.add_argument('--port', type=int, help='The port on which the server is listening', required=True)
+
+args = parser.parse_args()
+
+host = args.host
+port = args.port
 
 ip_port = ("192.168.1.8", 8000)  # 指定要发送的服务器地址和端口
 
@@ -113,5 +123,19 @@ def client():
         break
 
 
+def udp_client():
+    # Create a UDP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_address = (host, port)
+    while True:
+        data = input('>>> ').strip()
+        sock.sendto(data.encode(encoding='utf-8'), server_address)
+        data, server = sock.recvfrom(65507)
+        if data == b'exit':
+            break
+        print(data.decode(encoding='utf-8'))
+    sock.close()
+
+
 if __name__ == '__main__':
-    client()
+    udp_client()

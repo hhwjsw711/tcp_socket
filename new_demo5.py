@@ -477,10 +477,10 @@ def find_object(name, im_pad, kernel, ss, ss2, logname, debug=False, log_debug=F
         for p in contours:
             if ((len(p) <= 60) & (len(p) >= 4)):
                 img = drawObject_withclass(im, p, (0, 255, 0))
-        img_str = cv2.imencode('.jpg', img)[1].tostring()
+        img_stream = cv2.imencode('.jpg', img)[1].tostring()
         print('write')
     # return ship_box
-    return img_str
+    return img_stream
 
 
 def demo(input_value, k, s, ss, ss2, debug=True, log_debug=True):
